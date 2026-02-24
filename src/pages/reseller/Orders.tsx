@@ -1,0 +1,75 @@
+import { useState, useEffect } from 'react';
+
+type Order = {
+  id: number;
+  product_name: string;
+  admin_price: number;
+  reseller_price: number;
+  profit: number;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  status: string;
+  created_at: string;
+};
+
+export default function Orders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    fetch('/api/reseller/orders')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setOrders(data);
+        }
+      });
+  }, []);
+
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">My Orders</h1>
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {orders.map((order) => (
+              <tr key={order.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{order.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.product_name}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  <div>{order.customer_name}</div>
+                  <div>{order.customer_phone}</div>
+                  <div className="text-xs text-gray-400">{order.customer_address}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div>Admin: ৳{order.admin_price}</div>
+                  <div>Your Price: ৳{order.reseller_price}</div>
+                  <div className="text-green-600 font-medium">Profit: ৳{order.profit}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                    order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                    order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {order.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
