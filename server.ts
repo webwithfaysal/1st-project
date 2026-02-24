@@ -324,6 +324,64 @@ async function startServer() {
     }
   });
 
+  // --- Messaging API ---
+
+  // Admin: Get all resellers with their last message and unread count
+  app.get('/api/admin/messages/conversations', authenticate('admin'), (req, res) => {
+    const conversations = db.prepare(`
+      SELECT r.id, r.name, r.email,
+             (SELECT content FROM messages m WHERE m.reseller_id = r.id ORDER BY created_at DESC LIMIT 1) as last_message,
+             (SELECT created_at FROM messages m WHERE m.reseller_id = r.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
+             (SELECT COUNT(*) FROM messages m WHERE m.reseller_id = r.id AND m.sender = 'reseller' AND m.is_read = 0) as unread_count
+      FROM resellers r
+      ORDER BY last_message_time DESC NULLS LAST, r.name ASC
+    `).all();
+    res.json(conversations);
+  });
+
+  // Admin: Get messages for a specific reseller
+  app.get('/api/admin/messages/:resellerId', authenticate('admin'), (req, res) => {
+    const messages = db.prepare('SELECT * FROM messages WHERE reseller_id = ? ORDER BY created_at ASC').all(req.params.resellerId);
+    res.json(messages);
+  });
+
+  // Admin: Send a message to a reseller
+  app.post('/api/admin/messages/:resellerId', authenticate('admin'), (req, res) => {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Content is required' });
+    const result = db.prepare('INSERT INTO messages (reseller_id, sender, content) VALUES (?, ?, ?)').run(req.params.resellerId, 'admin', content);
+    res.json({ id: result.lastInsertRowid });
+  });
+
+  // Admin: Mark messages from a reseller as read
+  app.put('/api/admin/messages/:resellerId/read', authenticate('admin'), (req, res) => {
+    db.prepare('UPDATE messages SET is_read = 1 WHERE reseller_id = ? AND sender = "reseller"').run(req.params.resellerId);
+    res.json({ success: true });
+  });
+
+  // Reseller: Get messages
+  app.get('/api/reseller/messages', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    const messages = db.prepare('SELECT * FROM messages WHERE reseller_id = ? ORDER BY created_at ASC').all(resellerId);
+    res.json(messages);
+  });
+
+  // Reseller: Send a message to admin
+  app.post('/api/reseller/messages', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Content is required' });
+    const result = db.prepare('INSERT INTO messages (reseller_id, sender, content) VALUES (?, ?, ?)').run(resellerId, 'reseller', content);
+    res.json({ id: result.lastInsertRowid });
+  });
+
+  // Reseller: Mark messages from admin as read
+  app.put('/api/reseller/messages/read', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    db.prepare('UPDATE messages SET is_read = 1 WHERE reseller_id = ? AND sender = "admin"').run(resellerId);
+    res.json({ success: true });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

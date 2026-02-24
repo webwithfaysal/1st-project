@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, LogOut, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function ResellerLayout() {
@@ -12,6 +12,7 @@ export default function ResellerLayout() {
     { name: 'Products', href: '/reseller/products', icon: Package },
     { name: 'My Orders', href: '/reseller/orders', icon: ShoppingCart },
     { name: 'Withdrawals', href: '/reseller/withdrawals', icon: CreditCard },
+    { name: 'Messages', href: '/reseller/messages', icon: MessageSquare },
   ];
 
   return (

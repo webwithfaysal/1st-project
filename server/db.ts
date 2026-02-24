@@ -55,6 +55,16 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (reseller_id) REFERENCES resellers(id)
   );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reseller_id INTEGER NOT NULL,
+    sender TEXT NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reseller_id) REFERENCES resellers(id)
+  );
 `);
 
 // Seed Admin if not exists
@@ -75,14 +85,45 @@ if (resellerCount.count === 0) {
 const productCount = db.prepare('SELECT count(*) as count FROM products').get() as { count: number };
 if (productCount.count === 0) {
   db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
-    'Wireless Earbuds', 'High quality wireless earbuds with noise cancellation.', 1500, 50, 'https://picsum.photos/seed/earbuds/400/400'
+    'Wireless Earbuds', 'High quality wireless earbuds with active noise cancellation and 24-hour battery life.', 1500, 50, 'https://picsum.photos/seed/earbuds/400/400'
   );
   db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
-    'Smart Watch', 'Fitness tracker and smartwatch.', 2500, 30, 'https://picsum.photos/seed/watch/400/400'
+    'Smart Watch', 'Fitness tracker and smartwatch with heart rate monitoring and sleep tracking.', 2500, 30, 'https://picsum.photos/seed/watch/400/400'
   );
   db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
-    'Mechanical Keyboard', 'RGB mechanical keyboard with blue switches.', 3500, 20, 'https://picsum.photos/seed/keyboard/400/400'
+    'Mechanical Keyboard', 'RGB mechanical keyboard with tactile blue switches and aluminum frame.', 3500, 20, 'https://picsum.photos/seed/keyboard/400/400'
   );
+  db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+    'Gaming Mouse', 'Ergonomic gaming mouse with 16000 DPI optical sensor and customizable RGB lighting.', 1200, 45, 'https://picsum.photos/seed/mouse/400/400'
+  );
+  db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+    'Portable Power Bank', '20000mAh fast charging power bank with dual USB outputs and USB-C input.', 1800, 60, 'https://picsum.photos/seed/powerbank/400/400'
+  );
+} else if (productCount.count < 5) {
+  try {
+    // Only delete if there are no orders referencing them
+    const orderCount = db.prepare('SELECT count(*) as count FROM orders').get() as { count: number };
+    if (orderCount.count === 0) {
+      db.prepare('DELETE FROM products').run();
+      db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+        'Wireless Earbuds', 'High quality wireless earbuds with active noise cancellation and 24-hour battery life.', 1500, 50, 'https://picsum.photos/seed/earbuds/400/400'
+      );
+      db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+        'Smart Watch', 'Fitness tracker and smartwatch with heart rate monitoring and sleep tracking.', 2500, 30, 'https://picsum.photos/seed/watch/400/400'
+      );
+      db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+        'Mechanical Keyboard', 'RGB mechanical keyboard with tactile blue switches and aluminum frame.', 3500, 20, 'https://picsum.photos/seed/keyboard/400/400'
+      );
+      db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+        'Gaming Mouse', 'Ergonomic gaming mouse with 16000 DPI optical sensor and customizable RGB lighting.', 1200, 45, 'https://picsum.photos/seed/mouse/400/400'
+      );
+      db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(
+        'Portable Power Bank', '20000mAh fast charging power bank with dual USB outputs and USB-C input.', 1800, 60, 'https://picsum.photos/seed/powerbank/400/400'
+      );
+    }
+  } catch (e) {
+    console.error("Could not re-seed products:", e);
+  }
 }
 
 export default db;

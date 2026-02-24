@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Package, Users, ShoppingCart, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Users, ShoppingCart, CreditCard, LogOut, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function AdminLayout() {
@@ -13,6 +13,7 @@ export default function AdminLayout() {
     { name: 'Resellers', href: '/admin/resellers', icon: Users },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: CreditCard },
+    { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
   ];
 
   return (

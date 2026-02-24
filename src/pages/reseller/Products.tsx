@@ -17,6 +17,7 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({ reseller_price: 0, customer_name: '', customer_phone: '', customer_address: '' });
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +26,13 @@ export default function Products() {
       .then(data => {
         if (Array.isArray(data)) {
           setProducts(data);
+          setFetchError(null);
+        } else {
+          setFetchError(data.error || 'Failed to fetch products');
         }
+      })
+      .catch(err => {
+        setFetchError(err.message);
       });
   }, []);
 
@@ -71,11 +78,23 @@ export default function Products() {
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Available Products</h1>
 
+      {fetchError && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-md mb-6">
+          Error: {fetchError}
+        </div>
+      )}
+
+      {products.length === 0 && !fetchError && (
+        <div className="bg-white shadow rounded-lg p-8 text-center text-gray-500">
+          No products available at the moment.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <div key={product.id} className="bg-white overflow-hidden shadow rounded-lg flex flex-col">
             <div className="h-48 w-full bg-gray-200">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+              <img src={product.image} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>

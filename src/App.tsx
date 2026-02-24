@@ -16,10 +16,12 @@ import AdminProducts from './pages/admin/Products';
 import AdminResellers from './pages/admin/Resellers';
 import AdminOrders from './pages/admin/Orders';
 import AdminWithdrawals from './pages/admin/Withdrawals';
+import AdminMessages from './pages/admin/Messages';
 import ResellerDashboard from './pages/reseller/Dashboard';
 import ResellerProducts from './pages/reseller/Products';
 import ResellerOrders from './pages/reseller/Orders';
 import ResellerWithdrawals from './pages/reseller/Withdrawals';
+import ResellerMessages from './pages/reseller/Messages';
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode, role: 'admin' | 'reseller' }) {
   const { user, loading } = useAuth();
@@ -45,6 +47,7 @@ export default function App() {
             <Route path="resellers" element={<AdminResellers />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="withdrawals" element={<AdminWithdrawals />} />
+            <Route path="messages" element={<AdminMessages />} />
           </Route>
 
           {/* Reseller Routes */}
@@ -53,6 +56,7 @@ export default function App() {
             <Route path="products" element={<ResellerProducts />} />
             <Route path="orders" element={<ResellerOrders />} />
             <Route path="withdrawals" element={<ResellerWithdrawals />} />
+            <Route path="messages" element={<ResellerMessages />} />
           </Route>
         </Routes>
       </Router>

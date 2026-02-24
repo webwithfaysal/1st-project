@@ -15,6 +15,7 @@ export default function Products() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', admin_price: '' as string | number, stock: '' as string | number, image: '' });
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = () => {
     fetch('/api/admin/products')
@@ -22,7 +23,13 @@ export default function Products() {
       .then(data => {
         if (Array.isArray(data)) {
           setProducts(data);
+          setError(null);
+        } else {
+          setError(data.error || 'Failed to fetch products');
         }
+      })
+      .catch(err => {
+        setError(err.message);
       });
   };
 
@@ -83,13 +90,18 @@ export default function Products() {
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        {error && (
+          <div className="p-4 bg-red-50 text-red-600">
+            Error: {error}
+          </div>
+        )}
         <ul className="divide-y divide-gray-200">
           {products.map((product) => (
             <li key={product.id}>
               <div className="px-4 py-4 flex items-center sm:px-6">
                 <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                   <div className="flex items-center">
-                    <img src={product.image} alt="" className="h-12 w-12 rounded-md object-cover" />
+                    <img src={product.image} alt="" className="h-12 w-12 rounded-md object-cover" referrerPolicy="no-referrer" />
                     <div className="ml-4">
                       <p className="font-medium text-indigo-600 truncate">{product.name}</p>
                       <p className="text-sm text-gray-500">Stock: {product.stock} | Price: ৳{product.admin_price}</p>
@@ -107,6 +119,11 @@ export default function Products() {
               </div>
             </li>
           ))}
+          {products.length === 0 && !error && (
+            <li className="px-4 py-8 text-center text-gray-500">
+              No products found.
+            </li>
+          )}
         </ul>
       </div>
 
