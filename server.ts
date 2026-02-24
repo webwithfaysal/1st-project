@@ -39,6 +39,25 @@ async function startServer() {
   // --- API Routes ---
 
   // Auth
+  app.post('/api/auth/register', (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      res.status(400).json({ error: 'Missing fields' });
+      return;
+    }
+    try {
+      const hash = bcrypt.hashSync(password, 10);
+      const result = db.prepare('INSERT INTO resellers (name, email, password) VALUES (?, ?, ?)').run(name, email, hash);
+      res.json({ success: true, id: result.lastInsertRowid });
+    } catch (err: any) {
+      if (err.message.includes('UNIQUE constraint failed')) {
+        res.status(400).json({ error: 'Email already exists' });
+      } else {
+        res.status(400).json({ error: err.message });
+      }
+    }
+  });
+
   app.post('/api/auth/login', (req, res) => {
     const { email, password, role } = req.body;
     if (!email || !password || !role) {
@@ -112,15 +131,23 @@ async function startServer() {
   });
 
   app.post('/api/admin/products', authenticate('admin'), (req, res) => {
-    const { name, description, admin_price, stock, image } = req.body;
-    const result = db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(name, description, admin_price, stock, image || 'https://picsum.photos/seed/product/400/400');
-    res.json({ id: result.lastInsertRowid });
+    try {
+      const { name, description, admin_price, stock, image } = req.body;
+      const result = db.prepare('INSERT INTO products (name, description, admin_price, stock, image) VALUES (?, ?, ?, ?, ?)').run(name, description, Number(admin_price) || 0, Number(stock) || 0, image || 'https://picsum.photos/seed/product/400/400');
+      res.json({ id: result.lastInsertRowid });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
   });
 
   app.put('/api/admin/products/:id', authenticate('admin'), (req, res) => {
-    const { name, description, admin_price, stock, image } = req.body;
-    db.prepare('UPDATE products SET name = ?, description = ?, admin_price = ?, stock = ?, image = ? WHERE id = ?').run(name, description, admin_price, stock, image, req.params.id);
-    res.json({ success: true });
+    try {
+      const { name, description, admin_price, stock, image } = req.body;
+      db.prepare('UPDATE products SET name = ?, description = ?, admin_price = ?, stock = ?, image = ? WHERE id = ?').run(name, description, Number(admin_price) || 0, Number(stock) || 0, image, req.params.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
   });
 
   app.delete('/api/admin/products/:id', authenticate('admin'), (req, res) => {

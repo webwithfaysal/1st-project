@@ -7,10 +7,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import AdminLogin from './pages/AdminLogin';
 import AdminLayout from './layouts/AdminLayout';
 import ResellerLayout from './layouts/ResellerLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminProducts from './pages/admin/Products';
+import AdminResellers from './pages/admin/Resellers';
 import AdminOrders from './pages/admin/Orders';
 import AdminWithdrawals from './pages/admin/Withdrawals';
 import ResellerDashboard from './pages/reseller/Dashboard';
@@ -32,11 +35,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="resellers" element={<AdminResellers />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="withdrawals" element={<AdminWithdrawals />} />
           </Route>

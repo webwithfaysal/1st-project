@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
-export default function Login() {
+export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,14 +18,14 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role: 'reseller' }),
+        body: JSON.stringify({ email, password, role: 'admin' }),
       });
       
       const data = await res.json();
       
       if (res.ok) {
         login(data.user);
-        navigate('/reseller');
+        navigate('/admin');
       } else {
         setError(data.error || 'Login failed');
       }
@@ -38,12 +38,12 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center">
-            <Lock className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 bg-slate-900 rounded-full flex items-center justify-center">
+            <Shield className="h-6 w-6 text-white" />
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Reseller Login
+          Admin Login
         </h2>
       </div>
 
@@ -58,7 +58,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -71,7 +71,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -83,16 +83,14 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
               >
-                Sign in
+                Sign in as Admin
               </button>
             </div>
             
-            <div className="mt-4 text-sm text-gray-500 text-center space-y-2">
-              <p>Demo Reseller: reseller@example.com / reseller123</p>
-              <p>Don't have an account? <Link to="/register" className="text-indigo-600 hover:text-indigo-500">Register here</Link></p>
-              <p className="pt-4 text-xs"><Link to="/admin-login" className="text-gray-400 hover:text-gray-500">Admin Login</Link></p>
+            <div className="mt-4 text-sm text-gray-500 text-center">
+              <p>Demo Admin: admin@example.com / admin123</p>
             </div>
           </form>
         </div>
