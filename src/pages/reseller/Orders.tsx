@@ -23,7 +23,7 @@ type Order = {
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
 
-  useEffect(() => {
+  const fetchOrders = () => {
     fetch('/api/reseller/orders')
       .then(res => res.json())
       .then(data => {
@@ -31,6 +31,12 @@ export default function Orders() {
           setOrders(data);
         }
       });
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, []);
 
   return (

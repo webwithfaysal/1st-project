@@ -11,13 +11,20 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    fetch('/api/reseller/dashboard', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.error) {
-          setStats(data);
-        }
-      });
+    const fetchStats = () => {
+      fetch('/api/reseller/dashboard', { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.error) {
+            setStats(data);
+          }
+        });
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const statCards = [

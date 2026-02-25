@@ -36,6 +36,8 @@ export default function Orders() {
 
   useEffect(() => {
     fetchOrders();
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, []);
 
   const handleStatusChange = async (id: number, status: string) => {
