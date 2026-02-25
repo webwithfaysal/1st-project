@@ -15,6 +15,10 @@ type Order = {
   delivery_charge: number;
   payment_method: string;
   location: string;
+  payment_account_method?: string;
+  payment_phone?: string;
+  payment_trx_id?: string;
+  payment_payer_name?: string;
 };
 
 export default function Orders() {
@@ -71,6 +75,15 @@ export default function Orders() {
                   <div className="text-xs text-indigo-500 mt-1">
                     {order.payment_method === 'advance' ? 'Advance' : 'COD'} - {order.location === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'}
                   </div>
+                  {order.payment_method === 'advance' && order.payment_trx_id && (
+                    <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200">
+                      <div className="font-semibold text-gray-700">Payment Details:</div>
+                      <div>Method: {order.payment_account_method}</div>
+                      <div>Phone: {order.payment_phone}</div>
+                      <div>TrxID: {order.payment_trx_id}</div>
+                      <div>Payer: {order.payment_payer_name}</div>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>Admin: ৳{order.admin_price}</div>

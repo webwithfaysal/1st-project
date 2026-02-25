@@ -100,6 +100,16 @@ try {
   // Columns might already exist
 }
 
+// Add advance payment columns to orders if they don't exist
+try {
+  db.exec('ALTER TABLE orders ADD COLUMN payment_account_method TEXT');
+  db.exec('ALTER TABLE orders ADD COLUMN payment_phone TEXT');
+  db.exec('ALTER TABLE orders ADD COLUMN payment_trx_id TEXT');
+  db.exec('ALTER TABLE orders ADD COLUMN payment_payer_name TEXT');
+} catch (e) {
+  // Columns might already exist
+}
+
 // Seed Settings if not exists
 db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_type', 'fixed')").run();
 db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_amount', '50')").run();

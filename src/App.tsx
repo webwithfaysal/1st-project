@@ -24,6 +24,7 @@ import ResellerOrders from './pages/reseller/Orders';
 import ResellerWithdrawals from './pages/reseller/Withdrawals';
 import ResellerMessages from './pages/reseller/Messages';
 import ResellerAffiliate from './pages/reseller/Affiliate';
+import ResellerPayment from './pages/reseller/Payment';
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode, role: 'admin' | 'reseller' }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ export default function App() {
             <Route index element={<ResellerDashboard />} />
             <Route path="products" element={<ResellerProducts />} />
             <Route path="orders" element={<ResellerOrders />} />
+            <Route path="payment/:id" element={<ResellerPayment />} />
             <Route path="withdrawals" element={<ResellerWithdrawals />} />
             <Route path="messages" element={<ResellerMessages />} />
             <Route path="affiliate" element={<ResellerAffiliate />} />

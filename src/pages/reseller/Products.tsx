@@ -97,8 +97,13 @@ export default function Products() {
       });
 
       if (res.ok) {
+        const data = await res.json();
         setIsModalOpen(false);
-        navigate('/reseller/orders');
+        if (formData.payment_method === 'advance') {
+          navigate(`/reseller/payment/${data.order_id}`);
+        } else {
+          navigate('/reseller/orders');
+        }
       } else {
         const data = await res.json();
         setError(data.error);

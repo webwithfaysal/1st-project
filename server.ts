@@ -376,20 +376,55 @@ async function startServer() {
 
       const profit = reseller_price - product.admin_price;
 
-      db.prepare(`
+      const result = db.prepare(`
         INSERT INTO orders (reseller_id, product_id, admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, delivery_charge)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(resellerId, product_id, product.admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, deliveryCharge);
 
       db.prepare('UPDATE products SET stock = stock - 1 WHERE id = ?').run(product_id);
+      return result.lastInsertRowid;
     });
 
     try {
-      placeOrder();
-      res.json({ success: true });
+      const orderId = placeOrder();
+      res.json({ success: true, order_id: orderId });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
     }
+  });
+
+  app.get('/api/reseller/orders/:id', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    const order = db.prepare(`
+      SELECT o.*, p.name as product_name 
+      FROM orders o 
+      JOIN products p ON o.product_id = p.id 
+      WHERE o.id = ? AND o.reseller_id = ?
+    `).get(req.params.id, resellerId);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(order);
+  });
+
+  app.post('/api/reseller/orders/:id/payment', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    const orderId = req.params.id;
+    const { method, phone, trx_id, payer_name } = req.body;
+
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND reseller_id = ?').get(orderId, resellerId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    db.prepare(`
+      UPDATE orders 
+      SET payment_account_method = ?, payment_phone = ?, payment_trx_id = ?, payment_payer_name = ?
+      WHERE id = ?
+    `).run(method, phone, trx_id, payer_name, orderId);
+
+    res.json({ success: true });
   });
 
   app.get('/api/reseller/orders', authenticate('reseller'), (req, res) => {
