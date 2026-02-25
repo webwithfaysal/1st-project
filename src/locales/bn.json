@@ -25,6 +25,11 @@
   "fixed_amount": "রেজিস্ট্রেশনে নির্দিষ্ট পরিমাণ (৳)",
   "percentage_amount": "অর্ডার লাভের শতকরা হার (%)",
   "referral_bonus_amount": "রেফারেল বোনাসের পরিমাণ",
+  "delivery_settings": "ডেলিভারি চার্জ সেটিংস",
+  "delivery_advance_inside": "অগ্রিম পেমেন্ট - ঢাকার ভিতরে (৳)",
+  "delivery_advance_outside": "অগ্রিম পেমেন্ট - ঢাকার বাইরে (৳)",
+  "delivery_cod_inside": "ক্যাশ অন ডেলিভারি - ঢাকার ভিতরে (৳)",
+  "delivery_cod_outside": "ক্যাশ অন ডেলিভারি - ঢাকার বাইরে (৳)",
   "save_settings": "সেটিংস সেভ করুন",
   "settings_saved": "সেটিংস সফলভাবে সেভ হয়েছে!"
 }

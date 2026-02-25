@@ -91,12 +91,22 @@ try {
   // Columns might already exist
 }
 
-// Seed Settings if not exists
-const settingsCount = db.prepare('SELECT count(*) as count FROM settings').get() as any;
-if (settingsCount.count === 0) {
-  db.prepare("INSERT INTO settings (key, value) VALUES ('referral_bonus_type', 'fixed')").run();
-  db.prepare("INSERT INTO settings (key, value) VALUES ('referral_bonus_amount', '50')").run();
+// Add delivery charge columns to orders if they don't exist
+try {
+  db.exec('ALTER TABLE orders ADD COLUMN delivery_charge REAL DEFAULT 0');
+  db.exec('ALTER TABLE orders ADD COLUMN payment_method TEXT');
+  db.exec('ALTER TABLE orders ADD COLUMN location TEXT');
+} catch (e) {
+  // Columns might already exist
 }
+
+// Seed Settings if not exists
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_type', 'fixed')").run();
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_amount', '50')").run();
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('delivery_charge_advance_inside', '60')").run();
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('delivery_charge_advance_outside', '120')").run();
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('delivery_charge_cod_inside', '80')").run();
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('delivery_charge_cod_outside', '150')").run();
 
 // Seed Admin if not exists
 const adminCount = db.prepare('SELECT count(*) as count FROM admins').get() as { count: number };

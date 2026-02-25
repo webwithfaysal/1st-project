@@ -301,13 +301,33 @@ async function startServer() {
   });
 
   app.put('/api/admin/settings', authenticate('admin'), (req, res) => {
-    const { referral_bonus_type, referral_bonus_amount } = req.body;
+    const { 
+      referral_bonus_type, 
+      referral_bonus_amount,
+      delivery_charge_advance_inside,
+      delivery_charge_advance_outside,
+      delivery_charge_cod_inside,
+      delivery_charge_cod_outside
+    } = req.body;
+    
     const updateSettings = db.transaction(() => {
       if (referral_bonus_type !== undefined) {
         db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('referral_bonus_type', String(referral_bonus_type));
       }
       if (referral_bonus_amount !== undefined) {
         db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('referral_bonus_amount', String(referral_bonus_amount));
+      }
+      if (delivery_charge_advance_inside !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('delivery_charge_advance_inside', String(delivery_charge_advance_inside));
+      }
+      if (delivery_charge_advance_outside !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('delivery_charge_advance_outside', String(delivery_charge_advance_outside));
+      }
+      if (delivery_charge_cod_inside !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('delivery_charge_cod_inside', String(delivery_charge_cod_inside));
+      }
+      if (delivery_charge_cod_outside !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('delivery_charge_cod_outside', String(delivery_charge_cod_outside));
       }
     });
     try {
@@ -335,7 +355,7 @@ async function startServer() {
 
   app.post('/api/reseller/orders', authenticate('reseller'), (req, res) => {
     const resellerId = (req as any).user.id;
-    const { product_id, reseller_price, customer_name, customer_phone, customer_address } = req.body;
+    const { product_id, reseller_price, customer_name, customer_phone, customer_address, payment_method, location } = req.body;
 
     const placeOrder = db.transaction(() => {
       const product = db.prepare('SELECT * FROM products WHERE id = ?').get(product_id) as any;
@@ -343,12 +363,23 @@ async function startServer() {
       if (product.stock <= 0) throw new Error('Out of stock');
       if (reseller_price < product.admin_price) throw new Error('Reseller price cannot be less than admin price');
 
+      // Get delivery charge from settings
+      let deliveryChargeKey = '';
+      if (payment_method === 'advance') {
+        deliveryChargeKey = location === 'inside' ? 'delivery_charge_advance_inside' : 'delivery_charge_advance_outside';
+      } else {
+        deliveryChargeKey = location === 'inside' ? 'delivery_charge_cod_inside' : 'delivery_charge_cod_outside';
+      }
+      
+      const deliveryChargeSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get(deliveryChargeKey) as any;
+      const deliveryCharge = deliveryChargeSetting ? parseFloat(deliveryChargeSetting.value) : 0;
+
       const profit = reseller_price - product.admin_price;
 
       db.prepare(`
-        INSERT INTO orders (reseller_id, product_id, admin_price, reseller_price, profit, customer_name, customer_phone, customer_address)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(resellerId, product_id, product.admin_price, reseller_price, profit, customer_name, customer_phone, customer_address);
+        INSERT INTO orders (reseller_id, product_id, admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, delivery_charge)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(resellerId, product_id, product.admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, deliveryCharge);
 
       db.prepare('UPDATE products SET stock = stock - 1 WHERE id = ?').run(product_id);
     });

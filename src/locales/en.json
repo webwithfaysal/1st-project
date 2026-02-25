@@ -25,6 +25,11 @@
   "fixed_amount": "Fixed Amount on Registration (৳)",
   "percentage_amount": "Percentage of Order Profit (%)",
   "referral_bonus_amount": "Referral Bonus Amount",
+  "delivery_settings": "Delivery Charge Settings",
+  "delivery_advance_inside": "Advance Payment - Inside Dhaka (৳)",
+  "delivery_advance_outside": "Advance Payment - Outside Dhaka (৳)",
+  "delivery_cod_inside": "Cash on Delivery - Inside Dhaka (৳)",
+  "delivery_cod_outside": "Cash on Delivery - Outside Dhaka (৳)",
   "save_settings": "Save Settings",
   "settings_saved": "Settings saved successfully!"
 }

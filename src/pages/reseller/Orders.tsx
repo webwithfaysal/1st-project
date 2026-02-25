@@ -11,6 +11,9 @@ type Order = {
   customer_address: string;
   status: string;
   created_at: string;
+  delivery_charge: number;
+  payment_method: string;
+  location: string;
 };
 
 export default function Orders() {
@@ -49,11 +52,16 @@ export default function Orders() {
                   <div>{order.customer_name}</div>
                   <div>{order.customer_phone}</div>
                   <div className="text-xs text-gray-400">{order.customer_address}</div>
+                  <div className="text-xs text-indigo-500 mt-1">
+                    {order.payment_method === 'advance' ? 'Advance' : 'COD'} - {order.location === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>Admin: ৳{order.admin_price}</div>
                   <div>Your Price: ৳{order.reseller_price}</div>
-                  <div className="text-green-600 font-medium">Profit: ৳{order.profit}</div>
+                  <div>Delivery: ৳{order.delivery_charge || 0}</div>
+                  <div className="text-gray-900 font-bold">Total: ৳{order.reseller_price + (order.delivery_charge || 0)}</div>
+                  <div className="text-green-600 font-medium mt-1">Profit: ৳{order.profit}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

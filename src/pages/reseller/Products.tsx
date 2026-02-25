@@ -15,8 +15,24 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({ reseller_price: 0, customer_name: '', customer_phone: '', customer_address: '' });
+  const [formData, setFormData] = useState({ 
+    reseller_price: 0, 
+    customer_name: '', 
+    customer_phone: '', 
+    customer_address: '',
+    payment_method: 'cod',
+    location: 'inside'
+  });
+  const [deliverySettings, setDeliverySettings] = useState<any>({});
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(res => res.json())
+      .then(data => {
+        setDeliverySettings(data);
+      });
+  }, []);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -38,9 +54,27 @@ export default function Products() {
 
   const openOrderModal = (product: Product) => {
     setSelectedProduct(product);
-    setFormData({ reseller_price: product.admin_price + 100, customer_name: '', customer_phone: '', customer_address: '' });
+    setFormData({ 
+      reseller_price: product.admin_price + 100, 
+      customer_name: '', 
+      customer_phone: '', 
+      customer_address: '',
+      payment_method: 'cod',
+      location: 'inside'
+    });
     setError('');
     setIsModalOpen(true);
+  };
+
+  const calculateDeliveryCharge = () => {
+    if (!deliverySettings) return 0;
+    let key = '';
+    if (formData.payment_method === 'advance') {
+      key = formData.location === 'inside' ? 'delivery_charge_advance_inside' : 'delivery_charge_advance_outside';
+    } else {
+      key = formData.location === 'inside' ? 'delivery_charge_cod_inside' : 'delivery_charge_cod_outside';
+    }
+    return parseFloat(deliverySettings[key] || '0');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,10 +170,36 @@ export default function Products() {
                   
                   <div className="mb-4 bg-indigo-50 p-4 rounded-md">
                     <p className="text-sm text-indigo-800">Admin Price: <strong>৳{selectedProduct.admin_price}</strong></p>
-                    <p className="text-sm text-indigo-800">Your Profit: <strong>৳{formData.reseller_price - selectedProduct.admin_price}</strong></p>
+                    <p className="text-sm text-indigo-800">Delivery Charge: <strong>৳{calculateDeliveryCharge()}</strong></p>
+                    <p className="text-sm text-indigo-800">Total Customer Pays: <strong>৳{formData.reseller_price + calculateDeliveryCharge()}</strong></p>
+                    <p className="text-sm text-indigo-800 mt-2">Your Profit: <strong>৳{formData.reseller_price - selectedProduct.admin_price}</strong></p>
                   </div>
 
                   <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                        <select
+                          value={formData.payment_method}
+                          onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
+                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                          <option value="cod">Cash on Delivery</option>
+                          <option value="advance">Advance Payment</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Location</label>
+                        <select
+                          value={formData.location}
+                          onChange={(e) => setFormData({...formData, location: e.target.value})}
+                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                          <option value="inside">Inside Dhaka</option>
+                          <option value="outside">Outside Dhaka</option>
+                        </select>
+                      </div>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Your Selling Price (৳)</label>
                       <input type="number" required min={selectedProduct.admin_price} value={formData.reseller_price} onChange={e => setFormData({...formData, reseller_price: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
