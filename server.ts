@@ -212,13 +212,34 @@ async function startServer() {
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any;
       if (!order) throw new Error('Order not found');
       
+      const reseller = db.prepare('SELECT referred_by FROM resellers WHERE id = ?').get(order.reseller_id) as any;
+      const referredBy = reseller?.referred_by;
+
+      const bonusType = (db.prepare("SELECT value FROM settings WHERE key = 'referral_bonus_type'").get() as any)?.value || 'fixed';
+      const bonusAmount = parseFloat((db.prepare("SELECT value FROM settings WHERE key = 'referral_bonus_amount'").get() as any)?.value || '0');
+
       // If status changes to Delivered and wasn't Delivered before, add profit to reseller
       if (status === 'Delivered' && order.status !== 'Delivered') {
         db.prepare('UPDATE resellers SET balance = balance + ? WHERE id = ?').run(order.profit, order.reseller_id);
+        
+        // Handle percentage referral bonus
+        if (referredBy && bonusType === 'percentage' && bonusAmount > 0) {
+          const referralBonus = (order.profit * bonusAmount) / 100;
+          db.prepare('UPDATE resellers SET balance = balance + ? WHERE id = ?').run(referralBonus, referredBy);
+          db.prepare('INSERT INTO referral_earnings (referrer_id, referred_id, amount, type) VALUES (?, ?, ?, ?)').run(referredBy, order.reseller_id, referralBonus, 'order_profit');
+        }
       } 
       // If status changes from Delivered to something else, remove profit
       else if (status !== 'Delivered' && order.status === 'Delivered') {
         db.prepare('UPDATE resellers SET balance = balance - ? WHERE id = ?').run(order.profit, order.reseller_id);
+        
+        // Revert percentage referral bonus
+        if (referredBy && bonusType === 'percentage' && bonusAmount > 0) {
+          const referralBonus = (order.profit * bonusAmount) / 100;
+          db.prepare('UPDATE resellers SET balance = balance - ? WHERE id = ?').run(referralBonus, referredBy);
+          // We could delete or add a negative entry in referral_earnings, but keeping it simple for now
+          db.prepare('INSERT INTO referral_earnings (referrer_id, referred_id, amount, type) VALUES (?, ?, ?, ?)').run(referredBy, order.reseller_id, -referralBonus, 'order_profit_revert');
+        }
       }
 
       db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
