@@ -4,11 +4,10 @@ import { io } from 'socket.io-client';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
+    totalOrders: 0,
     totalSales: 0,
-    totalProfit: 0,
+    totalWithdrawals: 0,
     totalResellers: 0,
-    pendingWithdrawals: 0,
-    pendingOrders: 0,
     recentOrders: [] as any[],
   });
 
@@ -38,11 +37,10 @@ export default function Dashboard() {
   }, []);
 
   const statCards = [
+    { name: 'Total Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'bg-blue-500' },
     { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-emerald-500' },
-    { name: 'Total Reseller Earnings', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-blue-500' },
+    { name: 'Total Withdrawals', value: `৳${stats.totalWithdrawals}`, icon: CreditCard, color: 'bg-amber-500' },
     { name: 'Total Resellers', value: stats.totalResellers, icon: Users, color: 'bg-purple-500' },
-    { name: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: CreditCard, color: 'bg-amber-500' },
-    { name: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'bg-orange-500' },
   ];
 
   return (

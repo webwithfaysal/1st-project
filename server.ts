@@ -164,11 +164,10 @@ async function startServer() {
 
   // --- Admin Routes ---
   app.get('/api/admin/dashboard', authenticate('admin'), (req, res) => {
+    const totalOrders = (db.prepare('SELECT count(*) as count FROM orders').get() as any).count;
     const totalSales = (db.prepare('SELECT SUM(admin_price + COALESCE(delivery_charge, 0)) as total FROM orders WHERE status = "Delivered"').get() as any).total || 0;
-    const totalProfit = (db.prepare('SELECT SUM(profit) as total FROM orders WHERE status = "Delivered"').get() as any).total || 0;
+    const totalWithdrawals = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE status = "Approved"').get() as any).total || 0;
     const totalResellers = (db.prepare('SELECT count(*) as count FROM resellers').get() as any).count;
-    const pendingWithdrawals = (db.prepare('SELECT count(*) as count FROM withdrawals WHERE status = "Pending"').get() as any).count;
-    const pendingOrders = (db.prepare('SELECT count(*) as count FROM orders WHERE status = "Pending"').get() as any).count;
     
     const recentOrders = db.prepare(`
       SELECT o.*, p.name as product_name, r.name as reseller_name 
@@ -178,7 +177,7 @@ async function startServer() {
       ORDER BY o.id DESC LIMIT 5
     `).all();
 
-    res.json({ totalSales, totalProfit, totalResellers, pendingWithdrawals, pendingOrders, recentOrders });
+    res.json({ totalOrders, totalSales, totalWithdrawals, totalResellers, recentOrders });
   });
 
   app.get('/api/admin/products', authenticate('admin'), (req, res) => {
@@ -379,10 +378,11 @@ async function startServer() {
   // --- Reseller Routes ---
   app.get('/api/reseller/dashboard', authenticate('reseller'), (req, res) => {
     const resellerId = (req as any).user.id;
+    const totalOrders = (db.prepare('SELECT count(*) as count FROM orders WHERE reseller_id = ?').get(resellerId) as any).count;
     const totalSales = (db.prepare('SELECT SUM(reseller_price + COALESCE(delivery_charge, 0)) as total FROM orders WHERE reseller_id = ? AND status = "Delivered"').get(resellerId) as any).total || 0;
     const totalProfit = (db.prepare('SELECT SUM(profit) as total FROM orders WHERE reseller_id = ? AND status = "Delivered"').get(resellerId) as any).total || 0;
     const balance = (db.prepare('SELECT balance FROM resellers WHERE id = ?').get(resellerId) as any).balance;
-    const pendingOrders = (db.prepare('SELECT count(*) as count FROM orders WHERE reseller_id = ? AND status = "Pending"').get(resellerId) as any).count;
+    const totalWithdrawn = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE reseller_id = ? AND status = "Approved"').get(resellerId) as any).total || 0;
     
     const recentOrders = db.prepare(`
       SELECT o.*, p.name as product_name 
@@ -392,7 +392,7 @@ async function startServer() {
       ORDER BY o.id DESC LIMIT 5
     `).all(resellerId);
 
-    res.json({ totalSales, totalProfit, balance, pendingOrders, recentOrders });
+    res.json({ totalOrders, totalSales, totalProfit, balance, totalWithdrawn, recentOrders });
   });
 
   app.get('/api/reseller/products', authenticate('reseller'), (req, res) => {

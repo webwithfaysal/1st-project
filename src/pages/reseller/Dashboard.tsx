@@ -6,10 +6,11 @@ import { useAuth } from '../../context/AuthContext';
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
+    totalOrders: 0,
     totalSales: 0,
     totalProfit: 0,
     balance: 0,
-    pendingOrders: 0,
+    totalWithdrawn: 0,
     recentOrders: [] as any[],
   });
 
@@ -41,17 +42,18 @@ export default function Dashboard() {
   }, [user?.id]);
 
   const statCards = [
-    { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-indigo-500' },
-    { name: 'Expected Profit', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-emerald-500' },
-    { name: 'Available Balance', value: `৳${stats.balance}`, icon: CreditCard, color: 'bg-blue-500' },
-    { name: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'bg-orange-500' },
+    { name: 'Total Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'bg-indigo-500' },
+    { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-emerald-500' },
+    { name: 'Total Profit', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-blue-500' },
+    { name: 'Available Balance', value: `৳${stats.balance}`, icon: CreditCard, color: 'bg-purple-500' },
+    { name: 'Total Withdrawn', value: `৳${stats.totalWithdrawn}`, icon: Clock, color: 'bg-orange-500' },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Dashboard</h1>
       
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
         {statCards.map((item) => (
           <div key={item.name} className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
