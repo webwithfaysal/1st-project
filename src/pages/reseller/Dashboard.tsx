@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, ShoppingBag, CreditCard } from 'lucide-react';
+import { DollarSign, ShoppingBag, CreditCard, Clock } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProfit: 0,
     balance: 0,
+    pendingOrders: 0,
   });
 
   useEffect(() => {
@@ -20,15 +21,16 @@ export default function Dashboard() {
 
   const statCards = [
     { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-indigo-500' },
-    { name: 'Total Profit', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-emerald-500' },
+    { name: 'Expected Profit', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-emerald-500' },
     { name: 'Available Balance', value: `৳${stats.balance}`, icon: CreditCard, color: 'bg-blue-500' },
+    { name: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'bg-orange-500' },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Dashboard</h1>
       
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((item) => (
           <div key={item.name} className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">

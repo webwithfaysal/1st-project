@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, Users, ShoppingBag, CreditCard } from 'lucide-react';
+import { DollarSign, Users, ShoppingBag, CreditCard, Clock } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -7,6 +7,7 @@ export default function Dashboard() {
     totalProfit: 0,
     totalResellers: 0,
     pendingWithdrawals: 0,
+    pendingOrders: 0,
   });
 
   useEffect(() => {
@@ -21,9 +22,10 @@ export default function Dashboard() {
 
   const statCards = [
     { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-emerald-500' },
-    { name: 'Total Profit', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-blue-500' },
+    { name: 'Total Reseller Earnings', value: `৳${stats.totalProfit}`, icon: ShoppingBag, color: 'bg-blue-500' },
     { name: 'Total Resellers', value: stats.totalResellers, icon: Users, color: 'bg-purple-500' },
     { name: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: CreditCard, color: 'bg-amber-500' },
+    { name: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'bg-orange-500' },
   ];
 
   return (
