@@ -40,15 +40,46 @@ async function startServer() {
 
   // Auth
   app.post('/api/auth/register', (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, referral_code } = req.body;
     if (!name || !email || !password) {
       res.status(400).json({ error: 'Missing fields' });
       return;
     }
-    try {
+
+    const registerUser = db.transaction(() => {
+      let referredBy = null;
+      if (referral_code) {
+        const referrer = db.prepare('SELECT id FROM resellers WHERE referral_code = ?').get(referral_code) as any;
+        if (referrer) {
+          referredBy = referrer.id;
+        }
+      }
+
       const hash = bcrypt.hashSync(password, 10);
-      const result = db.prepare('INSERT INTO resellers (name, email, password) VALUES (?, ?, ?)').run(name, email, hash);
-      res.json({ success: true, id: result.lastInsertRowid });
+      let newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Ensure uniqueness
+      while (db.prepare('SELECT id FROM resellers WHERE referral_code = ?').get(newReferralCode)) {
+        newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
+
+      const result = db.prepare('INSERT INTO resellers (name, email, password, referral_code, referred_by) VALUES (?, ?, ?, ?, ?)').run(name, email, hash, newReferralCode, referredBy);
+      const newResellerId = result.lastInsertRowid;
+
+      if (referredBy) {
+        const bonusType = (db.prepare("SELECT value FROM settings WHERE key = 'referral_bonus_type'").get() as any)?.value || 'fixed';
+        const bonusAmount = parseFloat((db.prepare("SELECT value FROM settings WHERE key = 'referral_bonus_amount'").get() as any)?.value || '0');
+        
+        if (bonusType === 'fixed' && bonusAmount > 0) {
+          db.prepare('UPDATE resellers SET balance = balance + ? WHERE id = ?').run(bonusAmount, referredBy);
+          db.prepare('INSERT INTO referral_earnings (referrer_id, referred_id, amount, type) VALUES (?, ?, ?, ?)').run(referredBy, newResellerId, bonusAmount, 'registration');
+        }
+      }
+      return newResellerId;
+    });
+
+    try {
+      const newId = registerUser();
+      res.json({ success: true, id: newId });
     } catch (err: any) {
       if (err.message.includes('UNIQUE constraint failed')) {
         res.status(400).json({ error: 'Email already exists' });
@@ -238,6 +269,34 @@ async function startServer() {
     }
   });
 
+  // --- Admin Settings ---
+  app.get('/api/admin/settings', authenticate('admin'), (req, res) => {
+    const settings = db.prepare('SELECT * FROM settings').all();
+    const settingsObj = settings.reduce((acc: any, curr: any) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+    res.json(settingsObj);
+  });
+
+  app.put('/api/admin/settings', authenticate('admin'), (req, res) => {
+    const { referral_bonus_type, referral_bonus_amount } = req.body;
+    const updateSettings = db.transaction(() => {
+      if (referral_bonus_type !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('referral_bonus_type', String(referral_bonus_type));
+      }
+      if (referral_bonus_amount !== undefined) {
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('referral_bonus_amount', String(referral_bonus_amount));
+      }
+    });
+    try {
+      updateSettings();
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
   // --- Reseller Routes ---
   app.get('/api/reseller/dashboard', authenticate('reseller'), (req, res) => {
     const resellerId = (req as any).user.id;
@@ -324,6 +383,31 @@ async function startServer() {
     } catch (err: any) {
       res.status(400).json({ error: err.message });
     }
+  });
+
+  // --- Reseller Affiliate ---
+  app.get('/api/reseller/affiliate', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    
+    // Ensure reseller has a referral code
+    let reseller = db.prepare('SELECT referral_code FROM resellers WHERE id = ?').get(resellerId) as any;
+    if (!reseller.referral_code) {
+      let newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      while (db.prepare('SELECT id FROM resellers WHERE referral_code = ?').get(newReferralCode)) {
+        newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
+      db.prepare('UPDATE resellers SET referral_code = ? WHERE id = ?').run(newReferralCode, resellerId);
+      reseller.referral_code = newReferralCode;
+    }
+
+    const earnings = db.prepare('SELECT SUM(amount) as total FROM referral_earnings WHERE referrer_id = ?').get(resellerId) as any;
+    const referredUsers = db.prepare('SELECT id, name, email FROM resellers WHERE referred_by = ?').all(resellerId);
+    
+    res.json({
+      referral_code: reseller.referral_code,
+      total_earnings: earnings.total || 0,
+      referred_users: referredUsers
+    });
   });
 
   // --- Messaging API ---

@@ -65,7 +65,38 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (reseller_id) REFERENCES resellers(id)
   );
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS referral_earnings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    referrer_id INTEGER NOT NULL,
+    referred_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    type TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (referrer_id) REFERENCES resellers(id),
+    FOREIGN KEY (referred_id) REFERENCES resellers(id)
+  );
 `);
+
+// Add referral columns to resellers if they don't exist
+try {
+  db.exec('ALTER TABLE resellers ADD COLUMN referral_code TEXT');
+  db.exec('ALTER TABLE resellers ADD COLUMN referred_by INTEGER');
+} catch (e) {
+  // Columns might already exist
+}
+
+// Seed Settings if not exists
+const settingsCount = db.prepare('SELECT count(*) as count FROM settings').get() as any;
+if (settingsCount.count === 0) {
+  db.prepare("INSERT INTO settings (key, value) VALUES ('referral_bonus_type', 'fixed')").run();
+  db.prepare("INSERT INTO settings (key, value) VALUES ('referral_bonus_amount', '50')").run();
+}
 
 // Seed Admin if not exists
 const adminCount = db.prepare('SELECT count(*) as count FROM admins').get() as { count: number };
