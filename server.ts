@@ -4,12 +4,26 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from './server/db.js';
+import http from 'http';
+import { Server } from 'socket.io';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: "*",
+    }
+  });
+
+  io.on('connection', (socket) => {
+    socket.on('join', (room) => {
+      socket.join(room);
+    });
+  });
 
   app.use(express.json());
   app.use(cookieParser());
@@ -79,6 +93,7 @@ async function startServer() {
 
     try {
       const newId = registerUser();
+      io.to('admin').emit('update_dashboard');
       res.json({ success: true, id: newId });
     } catch (err: any) {
       if (err.message.includes('UNIQUE constraint failed')) {
@@ -256,6 +271,13 @@ async function startServer() {
 
     try {
       updateStatus();
+      const order = db.prepare('SELECT reseller_id FROM orders WHERE id = ?').get(orderId) as any;
+      io.to('admin').emit('update_dashboard');
+      io.to('admin').emit('update_orders');
+      if (order) {
+        io.to(`reseller_${order.reseller_id}`).emit('update_dashboard');
+        io.to(`reseller_${order.reseller_id}`).emit('update_orders');
+      }
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -293,6 +315,13 @@ async function startServer() {
 
     try {
       updateWithdrawal();
+      const withdrawal = db.prepare('SELECT reseller_id FROM withdrawals WHERE id = ?').get(withdrawalId) as any;
+      io.to('admin').emit('update_dashboard');
+      io.to('admin').emit('update_withdrawals');
+      if (withdrawal) {
+        io.to(`reseller_${withdrawal.reseller_id}`).emit('update_dashboard');
+        io.to(`reseller_${withdrawal.reseller_id}`).emit('update_withdrawals');
+      }
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -405,6 +434,10 @@ async function startServer() {
 
     try {
       const orderId = placeOrder();
+      io.to('admin').emit('update_dashboard');
+      io.to('admin').emit('update_orders');
+      io.to(`reseller_${resellerId}`).emit('update_dashboard');
+      io.to(`reseller_${resellerId}`).emit('update_orders');
       res.json({ success: true, order_id: orderId });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -442,6 +475,11 @@ async function startServer() {
       WHERE id = ?
     `).run(method, phone, trx_id, payer_name, orderId);
 
+    io.to('admin').emit('update_dashboard');
+    io.to('admin').emit('update_orders');
+    io.to(`reseller_${resellerId}`).emit('update_dashboard');
+    io.to(`reseller_${resellerId}`).emit('update_orders');
+
     res.json({ success: true });
   });
 
@@ -476,15 +514,20 @@ async function startServer() {
       const reseller = db.prepare('SELECT balance FROM resellers WHERE id = ?').get(resellerId) as any;
       if (reseller.balance < amount) throw new Error('Insufficient balance');
 
-      db.prepare(`
+      const result = db.prepare(`
         INSERT INTO withdrawals (reseller_id, amount, method, account_number)
         VALUES (?, ?, ?, ?)
       `).run(resellerId, amount, method, account_number);
+      return result.lastInsertRowid;
     });
 
     try {
-      requestWithdrawal();
-      res.json({ success: true });
+      const withdrawalId = requestWithdrawal();
+      io.to('admin').emit('update_dashboard');
+      io.to('admin').emit('update_withdrawals');
+      io.to(`reseller_${resellerId}`).emit('update_dashboard');
+      io.to(`reseller_${resellerId}`).emit('update_withdrawals');
+      res.json({ success: true, id: withdrawalId });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
     }
@@ -584,7 +627,7 @@ async function startServer() {
     app.use(express.static('dist'));
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

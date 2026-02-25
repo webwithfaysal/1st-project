@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, ShoppingBag, CreditCard, Clock } from 'lucide-react';
+import { io } from 'socket.io-client';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProfit: 0,
@@ -22,10 +25,20 @@ export default function Dashboard() {
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
 
-    return () => clearInterval(interval);
-  }, []);
+    const socket = io();
+    if (user?.id) {
+      socket.emit('join', `reseller_${user.id}`);
+    }
+    
+    socket.on('update_dashboard', () => {
+      fetchStats();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id]);
 
   const statCards = [
     { name: 'Total Sales', value: `৳${stats.totalSales}`, icon: DollarSign, color: 'bg-indigo-500' },

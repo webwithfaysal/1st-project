@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, Users, ShoppingBag, CreditCard, Clock } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -23,9 +24,17 @@ export default function Dashboard() {
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
 
-    return () => clearInterval(interval);
+    const socket = io();
+    socket.emit('join', 'admin');
+    
+    socket.on('update_dashboard', () => {
+      fetchStats();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const statCards = [

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 type Withdrawal = {
   id: number;
@@ -25,6 +26,17 @@ export default function Withdrawals() {
 
   useEffect(() => {
     fetchWithdrawals();
+
+    const socket = io();
+    socket.emit('join', 'admin');
+    
+    socket.on('update_withdrawals', () => {
+      fetchWithdrawals();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleStatusChange = async (id: number, status: string) => {

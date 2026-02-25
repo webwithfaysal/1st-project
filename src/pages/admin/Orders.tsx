@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 type Order = {
   id: number;
@@ -36,8 +37,17 @@ export default function Orders() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
+
+    const socket = io();
+    socket.emit('join', 'admin');
+    
+    socket.on('update_orders', () => {
+      fetchOrders();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleStatusChange = async (id: number, status: string) => {

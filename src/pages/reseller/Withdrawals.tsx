@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { io } from 'socket.io-client';
 
 type Withdrawal = {
   id: number;
@@ -29,7 +30,21 @@ export default function Withdrawals() {
 
   useEffect(() => {
     fetchWithdrawals();
-  }, []);
+
+    const socket = io();
+    if (user?.id) {
+      socket.emit('join', `reseller_${user.id}`);
+    }
+    
+    socket.on('update_withdrawals', () => {
+      fetchWithdrawals();
+      refreshUser();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

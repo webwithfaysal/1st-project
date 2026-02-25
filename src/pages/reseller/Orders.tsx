@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import { useAuth } from '../../context/AuthContext';
 
 type Order = {
   id: number;
@@ -21,6 +23,7 @@ type Order = {
 };
 
 export default function Orders() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
 
   const fetchOrders = () => {
@@ -35,9 +38,20 @@ export default function Orders() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+
+    const socket = io();
+    if (user?.id) {
+      socket.emit('join', `reseller_${user.id}`);
+    }
+    
+    socket.on('update_orders', () => {
+      fetchOrders();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id]);
 
   return (
     <div>
