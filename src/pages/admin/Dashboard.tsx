@@ -8,10 +8,11 @@ export default function Dashboard() {
     totalResellers: 0,
     pendingWithdrawals: 0,
     pendingOrders: 0,
+    recentOrders: [] as any[],
   });
 
   useEffect(() => {
-    fetch('/api/admin/dashboard')
+    fetch('/api/admin/dashboard', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (!data.error) {
@@ -52,6 +53,46 @@ export default function Dashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Orders</h2>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reseller</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {stats.recentOrders && stats.recentOrders.map((order: any) => (
+                <tr key={order.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{order.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.reseller_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.product_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                      order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                      order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {(!stats.recentOrders || stats.recentOrders.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">No recent orders found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
