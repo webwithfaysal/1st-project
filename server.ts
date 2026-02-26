@@ -9,6 +9,8 @@ import { Server } from 'socket.io';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev';
 
+const generateTrxId = (prefix: string) => `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 10000).toString(16).toUpperCase()}`;
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -304,6 +306,26 @@ async function startServer() {
     }
   });
 
+  app.get('/api/admin/transactions', authenticate('admin'), (req, res) => {
+    const transactions = db.prepare(`
+      SELECT t.*, r.name as reseller_name 
+      FROM transactions t 
+      JOIN resellers r ON t.reseller_id = r.id 
+      ORDER BY t.id DESC
+    `).all();
+    res.json(transactions);
+  });
+
+  app.get('/api/reseller/transactions', authenticate('reseller'), (req, res) => {
+    const resellerId = (req as any).user.id;
+    const transactions = db.prepare(`
+      SELECT * FROM transactions 
+      WHERE reseller_id = ? 
+      ORDER BY id DESC
+    `).all(resellerId);
+    res.json(transactions);
+  });
+
   app.get('/api/admin/withdrawals', authenticate('admin'), (req, res) => {
     const withdrawals = db.prepare(`
       SELECT w.*, r.name as reseller_name 
@@ -447,14 +469,22 @@ async function startServer() {
       const deliveryCharge = deliveryChargeSetting ? parseFloat(deliveryChargeSetting.value) : 0;
 
       const profit = reseller_price - product.admin_price;
+      const orderTrxId = generateTrxId('ORD');
 
       const result = db.prepare(`
-        INSERT INTO orders (reseller_id, product_id, admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, delivery_charge)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(resellerId, product_id, product.admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, deliveryCharge);
+        INSERT INTO orders (reseller_id, product_id, admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, delivery_charge, transaction_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(resellerId, product_id, product.admin_price, reseller_price, profit, customer_name, customer_phone, customer_address, payment_method, location, deliveryCharge, orderTrxId);
+
+      const orderId = result.lastInsertRowid;
+
+      db.prepare(`
+        INSERT INTO transactions (transaction_id, type, amount, reseller_id, reference_id, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(orderTrxId, 'order', reseller_price + deliveryCharge, resellerId, orderId, 'Order Placed');
 
       db.prepare('UPDATE products SET stock = stock - 1 WHERE id = ?').run(product_id);
-      return result.lastInsertRowid;
+      return orderId;
     });
 
     try {
@@ -489,16 +519,25 @@ async function startServer() {
     const orderId = req.params.id;
     const { method, phone, trx_id, payer_name } = req.body;
 
-    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND reseller_id = ?').get(orderId, resellerId);
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND reseller_id = ?').get(orderId, resellerId) as any;
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    db.prepare(`
-      UPDATE orders 
-      SET payment_account_method = ?, payment_phone = ?, payment_trx_id = ?, payment_payer_name = ?
-      WHERE id = ?
-    `).run(method, phone, trx_id, payer_name, orderId);
+    const paymentTrxId = generateTrxId('PAY');
+
+    db.transaction(() => {
+      db.prepare(`
+        UPDATE orders 
+        SET payment_account_method = ?, payment_phone = ?, payment_trx_id = ?, payment_payer_name = ?
+        WHERE id = ?
+      `).run(method, phone, trx_id, payer_name, orderId);
+
+      db.prepare(`
+        INSERT INTO transactions (transaction_id, type, amount, reseller_id, reference_id, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(paymentTrxId, 'payment', order.admin_price + order.delivery_charge, resellerId, orderId, 'Advance Payment');
+    })();
 
     io.to('admin').emit('update_dashboard');
     io.to('admin').emit('update_orders');
@@ -541,11 +580,21 @@ async function startServer() {
       const availableBalance = (reseller?.balance || 0) - pendingWithdrawals;
       if (availableBalance < amount) throw new Error('Insufficient balance');
 
+      const withdrawalTrxId = generateTrxId('WDL');
+
       const result = db.prepare(`
-        INSERT INTO withdrawals (reseller_id, amount, method, account_number)
-        VALUES (?, ?, ?, ?)
-      `).run(resellerId, amount, method, account_number);
-      return result.lastInsertRowid;
+        INSERT INTO withdrawals (reseller_id, amount, method, account_number, transaction_id)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(resellerId, amount, method, account_number, withdrawalTrxId);
+      
+      const withdrawalId = result.lastInsertRowid;
+      
+      db.prepare(`
+        INSERT INTO transactions (transaction_id, type, amount, reseller_id, reference_id, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(withdrawalTrxId, 'withdrawal', amount, resellerId, withdrawalId, 'Withdrawal Requested');
+      
+      return withdrawalId;
     });
 
     try {

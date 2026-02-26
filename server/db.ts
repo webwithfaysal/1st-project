@@ -81,6 +81,18 @@ db.exec(`
     FOREIGN KEY (referrer_id) REFERENCES resellers(id),
     FOREIGN KEY (referred_id) REFERENCES resellers(id)
   );
+
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id TEXT UNIQUE NOT NULL,
+    type TEXT NOT NULL,
+    amount REAL NOT NULL,
+    reseller_id INTEGER NOT NULL,
+    reference_id INTEGER,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reseller_id) REFERENCES resellers(id)
+  );
 `);
 
 // Add referral columns to resellers if they don't exist

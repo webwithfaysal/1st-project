@@ -17,12 +17,14 @@ import AdminProducts from './pages/admin/Products';
 import AdminResellers from './pages/admin/Resellers';
 import AdminOrders from './pages/admin/Orders';
 import AdminWithdrawals from './pages/admin/Withdrawals';
+import AdminTransactions from './pages/admin/Transactions';
 import AdminMessages from './pages/admin/Messages';
 import AdminSettings from './pages/admin/Settings';
 import ResellerDashboard from './pages/reseller/Dashboard';
 import ResellerProducts from './pages/reseller/Products';
 import ResellerOrders from './pages/reseller/Orders';
 import ResellerWithdrawals from './pages/reseller/Withdrawals';
+import ResellerTransactions from './pages/reseller/Transactions';
 import ResellerMessages from './pages/reseller/Messages';
 import ResellerAffiliate from './pages/reseller/Affiliate';
 import ResellerPayment from './pages/reseller/Payment';
@@ -51,6 +53,7 @@ export default function App() {
             <Route path="resellers" element={<AdminResellers />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="withdrawals" element={<AdminWithdrawals />} />
+            <Route path="transactions" element={<AdminTransactions />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
@@ -62,6 +65,7 @@ export default function App() {
             <Route path="orders" element={<ResellerOrders />} />
             <Route path="payment/:id" element={<ResellerPayment />} />
             <Route path="withdrawals" element={<ResellerWithdrawals />} />
+            <Route path="transactions" element={<ResellerTransactions />} />
             <Route path="messages" element={<ResellerMessages />} />
             <Route path="affiliate" element={<ResellerAffiliate />} />
           </Route>

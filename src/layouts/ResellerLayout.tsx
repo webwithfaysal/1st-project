@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, LogOut, MessageSquare, Users } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, LogOut, MessageSquare, Users, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -17,6 +17,7 @@ export default function ResellerLayout() {
     { name: t('products'), href: '/reseller/products', icon: Package },
     { name: t('my_orders'), href: '/reseller/orders', icon: ShoppingCart },
     { name: t('withdrawals'), href: '/reseller/withdrawals', icon: CreditCard },
+    { name: 'Transactions', href: '/reseller/transactions', icon: FileText },
     { name: t('messages'), href: '/reseller/messages', icon: MessageSquare },
     { name: t('affiliate'), href: '/reseller/affiliate', icon: Users },
   ];

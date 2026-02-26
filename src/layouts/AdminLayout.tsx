@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Package, Users, ShoppingCart, CreditCard, LogOut, MessageSquare, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, Users, ShoppingCart, CreditCard, LogOut, MessageSquare, Settings, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -16,6 +16,7 @@ export default function AdminLayout() {
     { name: t('resellers'), href: '/admin/resellers', icon: Users },
     { name: t('orders'), href: '/admin/orders', icon: ShoppingCart },
     { name: t('withdrawals'), href: '/admin/withdrawals', icon: CreditCard },
+    { name: 'Transactions', href: '/admin/transactions', icon: FileText },
     { name: t('messages'), href: '/admin/messages', icon: MessageSquare },
     { name: t('settings'), href: '/admin/settings', icon: Settings },
   ];
