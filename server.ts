@@ -287,6 +287,23 @@ async function startServer() {
     }
   });
 
+  app.put('/api/admin/orders/:id/transaction', authenticate('admin'), (req, res) => {
+    const { transaction_id } = req.body;
+    const orderId = req.params.id;
+    
+    try {
+      db.prepare('UPDATE orders SET transaction_id = ? WHERE id = ?').run(transaction_id, orderId);
+      const order = db.prepare('SELECT reseller_id FROM orders WHERE id = ?').get(orderId) as any;
+      io.to('admin').emit('update_orders');
+      if (order) {
+        io.to(`reseller_${order.reseller_id}`).emit('update_orders');
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
   app.get('/api/admin/withdrawals', authenticate('admin'), (req, res) => {
     const withdrawals = db.prepare(`
       SELECT w.*, r.name as reseller_name 
@@ -298,7 +315,7 @@ async function startServer() {
   });
 
   app.put('/api/admin/withdrawals/:id/status', authenticate('admin'), (req, res) => {
-    const { status } = req.body;
+    const { status, transaction_id } = req.body;
     const withdrawalId = req.params.id;
 
     const updateWithdrawal = db.transaction(() => {
@@ -307,13 +324,15 @@ async function startServer() {
       if (withdrawal.status !== 'Pending') throw new Error('Withdrawal already processed');
 
       if (status === 'Approved') {
+        if (!transaction_id) throw new Error('Transaction ID is required for approval');
         // Deduct balance
         const reseller = db.prepare('SELECT balance FROM resellers WHERE id = ?').get(withdrawal.reseller_id) as any;
         if (reseller.balance < withdrawal.amount) throw new Error('Insufficient balance');
         db.prepare('UPDATE resellers SET balance = balance - ? WHERE id = ?').run(withdrawal.amount, withdrawal.reseller_id);
+        db.prepare('UPDATE withdrawals SET status = ?, transaction_id = ? WHERE id = ?').run(status, transaction_id, withdrawalId);
+      } else {
+        db.prepare('UPDATE withdrawals SET status = ? WHERE id = ?').run(status, withdrawalId);
       }
-
-      db.prepare('UPDATE withdrawals SET status = ? WHERE id = ?').run(status, withdrawalId);
     });
 
     try {

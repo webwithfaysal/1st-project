@@ -78,6 +78,7 @@ export default function Dashboard() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reseller</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TrxID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
@@ -87,6 +88,7 @@ export default function Dashboard() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{order.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.reseller_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.product_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{order.transaction_id || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
@@ -101,7 +103,7 @@ export default function Dashboard() {
               ))}
               {(!stats.recentOrders || stats.recentOrders.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">No recent orders found.</td>
+                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">No recent orders found.</td>
                 </tr>
               )}
             </tbody>

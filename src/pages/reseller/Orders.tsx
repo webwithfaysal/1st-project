@@ -20,6 +20,7 @@ type Order = {
   payment_phone?: string;
   payment_trx_id?: string;
   payment_payer_name?: string;
+  transaction_id?: string;
 };
 
 export default function Orders() {
@@ -64,6 +65,7 @@ export default function Orders() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TrxID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
@@ -95,6 +97,9 @@ export default function Orders() {
                   <div>Delivery: ৳{order.delivery_charge || 0}</div>
                   <div className="text-gray-900 font-bold">Total: ৳{order.reseller_price + (order.delivery_charge || 0)}</div>
                   <div className="text-green-600 font-medium mt-1">Profit: ৳{order.profit}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span className="font-mono">{order.transaction_id || '-'}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

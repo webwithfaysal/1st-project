@@ -20,6 +20,7 @@ type Order = {
   payment_phone?: string;
   payment_trx_id?: string;
   payment_payer_name?: string;
+  transaction_id?: string;
 };
 
 export default function Orders() {
@@ -59,6 +60,18 @@ export default function Orders() {
     fetchOrders();
   };
 
+  const handleTransactionUpdate = async (id: number) => {
+    const input = prompt('Enter Transaction ID for this order:');
+    if (input === null) return;
+    
+    await fetch(`/api/admin/orders/${id}/transaction`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction_id: input.trim() }),
+    });
+    fetchOrders();
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Orders</h1>
@@ -71,6 +84,7 @@ export default function Orders() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TrxID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
@@ -103,6 +117,17 @@ export default function Orders() {
                   <div>Delivery: ৳{order.delivery_charge || 0}</div>
                   <div className="text-gray-900 font-bold">Total: ৳{order.reseller_price + (order.delivery_charge || 0)}</div>
                   <div className="text-green-600 font-medium mt-1">Profit: ৳{order.profit}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono">{order.transaction_id || '-'}</span>
+                    <button 
+                      onClick={() => handleTransactionUpdate(order.id)}
+                      className="text-indigo-600 hover:text-indigo-900 text-xs underline"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <select

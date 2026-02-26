@@ -110,6 +110,20 @@ try {
   // Columns might already exist
 }
 
+// Add transaction_id to withdrawals if it doesn't exist
+try {
+  db.exec('ALTER TABLE withdrawals ADD COLUMN transaction_id TEXT');
+} catch (e) {
+  // Columns might already exist
+}
+
+// Add transaction_id to orders if it doesn't exist
+try {
+  db.exec('ALTER TABLE orders ADD COLUMN transaction_id TEXT');
+} catch (e) {
+  // Columns might already exist
+}
+
 // Seed Settings if not exists
 db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_type', 'fixed')").run();
 db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('referral_bonus_amount', '50')").run();

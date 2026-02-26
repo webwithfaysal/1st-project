@@ -8,6 +8,7 @@ type Withdrawal = {
   method: string;
   account_number: string;
   status: string;
+  transaction_id?: string;
   created_at: string;
 };
 
@@ -40,18 +41,29 @@ export default function Withdrawals() {
   }, []);
 
   const handleStatusChange = async (id: number, status: string) => {
-    if (confirm(`Are you sure you want to mark this withdrawal as ${status}?`)) {
-      const res = await fetch(`/api/admin/withdrawals/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        fetchWithdrawals();
-      } else {
-        const data = await res.json();
-        alert(data.error);
+    let transaction_id = '';
+    if (status === 'Approved') {
+      const input = prompt('Enter Transaction ID for this withdrawal:');
+      if (input === null) return; // Cancelled
+      if (!input.trim()) {
+        alert('Transaction ID is required to approve a withdrawal.');
+        return;
       }
+      transaction_id = input.trim();
+    } else {
+      if (!confirm(`Are you sure you want to mark this withdrawal as ${status}?`)) return;
+    }
+
+    const res = await fetch(`/api/admin/withdrawals/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, transaction_id }),
+    });
+    if (res.ok) {
+      fetchWithdrawals();
+    } else {
+      const data = await res.json();
+      alert(data.error);
     }
   };
 
@@ -67,6 +79,7 @@ export default function Withdrawals() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TrxID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
             </tr>
@@ -79,6 +92,7 @@ export default function Withdrawals() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">৳{w.amount}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{w.method}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{w.account_number}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{w.transaction_id || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     w.status === 'Approved' ? 'bg-green-100 text-green-800' :
