@@ -151,6 +151,10 @@ async function startServer() {
         user = db.prepare('SELECT id, name, email FROM admins WHERE id = ?').get(decoded.id) as any;
       } else {
         user = db.prepare('SELECT id, name, email, balance FROM resellers WHERE id = ?').get(decoded.id) as any;
+        if (user) {
+          const pendingWithdrawals = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE reseller_id = ? AND status = "Pending"').get(decoded.id) as any).total || 0;
+          user.balance = (user.balance || 0) - pendingWithdrawals;
+        }
       }
       if (!user) {
         res.status(401).json({ error: 'User not found' });
@@ -381,7 +385,9 @@ async function startServer() {
     const totalOrders = (db.prepare('SELECT count(*) as count FROM orders WHERE reseller_id = ?').get(resellerId) as any).count;
     const totalSales = (db.prepare('SELECT SUM(reseller_price + COALESCE(delivery_charge, 0)) as total FROM orders WHERE reseller_id = ? AND status = "Delivered"').get(resellerId) as any).total || 0;
     const totalProfit = (db.prepare('SELECT SUM(profit) as total FROM orders WHERE reseller_id = ? AND status = "Delivered"').get(resellerId) as any).total || 0;
-    const balance = (db.prepare('SELECT balance FROM resellers WHERE id = ?').get(resellerId) as any).balance;
+    const balanceRow = db.prepare('SELECT balance FROM resellers WHERE id = ?').get(resellerId) as any;
+    const pendingWithdrawals = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE reseller_id = ? AND status = "Pending"').get(resellerId) as any).total || 0;
+    const balance = (balanceRow?.balance || 0) - pendingWithdrawals;
     const totalWithdrawn = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE reseller_id = ? AND status = "Approved"').get(resellerId) as any).total || 0;
     
     const recentOrders = db.prepare(`
@@ -512,7 +518,9 @@ async function startServer() {
 
     const requestWithdrawal = db.transaction(() => {
       const reseller = db.prepare('SELECT balance FROM resellers WHERE id = ?').get(resellerId) as any;
-      if (reseller.balance < amount) throw new Error('Insufficient balance');
+      const pendingWithdrawals = (db.prepare('SELECT SUM(amount) as total FROM withdrawals WHERE reseller_id = ? AND status = "Pending"').get(resellerId) as any).total || 0;
+      const availableBalance = (reseller?.balance || 0) - pendingWithdrawals;
+      if (availableBalance < amount) throw new Error('Insufficient balance');
 
       const result = db.prepare(`
         INSERT INTO withdrawals (reseller_id, amount, method, account_number)
