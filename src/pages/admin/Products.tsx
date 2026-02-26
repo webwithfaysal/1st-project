@@ -18,7 +18,7 @@ export default function Products() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = () => {
-    fetch('/api/admin/products')
+    fetch(`/api/admin/products?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

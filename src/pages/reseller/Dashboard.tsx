@@ -16,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchStats = () => {
-      fetch('/api/reseller/dashboard', { cache: 'no-store' })
+      fetch(`/api/reseller/dashboard?t=${new Date().getTime()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((data) => {
           if (!data.error) {

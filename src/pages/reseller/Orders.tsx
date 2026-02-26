@@ -27,7 +27,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   const fetchOrders = () => {
-    fetch('/api/reseller/orders')
+    fetch(`/api/reseller/orders?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

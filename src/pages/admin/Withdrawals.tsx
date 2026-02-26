@@ -15,7 +15,7 @@ export default function Withdrawals() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   const fetchWithdrawals = () => {
-    fetch('/api/admin/withdrawals')
+    fetch(`/api/admin/withdrawals?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

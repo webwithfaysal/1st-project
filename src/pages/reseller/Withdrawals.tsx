@@ -19,7 +19,7 @@ export default function Withdrawals() {
   const { user, refreshUser } = useAuth();
 
   const fetchWithdrawals = () => {
-    fetch('/api/reseller/withdrawals')
+    fetch(`/api/reseller/withdrawals?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

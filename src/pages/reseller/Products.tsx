@@ -27,7 +27,7 @@ export default function Products() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/settings')
+    fetch(`/api/admin/settings?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         setDeliverySettings(data);
@@ -37,7 +37,7 @@ export default function Products() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('/api/reseller/products')
+    fetch(`/api/reseller/products?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
